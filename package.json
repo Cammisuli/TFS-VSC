@@ -31,5 +31,8 @@
     "lodash": "^4.6.1",
     "typescript": "^1.8.5",
     "vscode": "^0.11.0"
+  },
+  "dependencies": {
+    "promised-exec": "^1.0.1"
   }
 }

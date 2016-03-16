@@ -15,3 +15,10 @@ export function getCurrentFilePath(): string {
 
     return currentFilePath;
 }
+
+export function getBufferContents(buffer) {
+    return {
+        buffer: buffer,
+        string: buffer.toString('utf8')
+    };
+};
