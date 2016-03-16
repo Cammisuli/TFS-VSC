@@ -17,8 +17,16 @@
   "contributes": {
     "commands": [
       {
-        "command": "extension.sayHello",
-        "title": "Hello World"
+        "command": "tfs-vsc.checkIn",
+        "title": "TFS: Check In"
+      },
+      {
+          "command": "tfs-vsc.undo",
+          "title": "TFS: Undo Check Out"
+      },
+      {
+          "command": "tfs-vsc.getLatest",
+          "title": "TFS: Get Latest"
       }
     ]
   },
