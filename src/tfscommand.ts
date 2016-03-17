@@ -1,4 +1,4 @@
-import {workspace, window, Disposable, OutputChannel} from 'vscode';
+import {workspace, window, Disposable, OutputChannel, StatusBarItem, StatusBarAlignment} from 'vscode';
 import * as utils from './utils';
 import {exec, spawnSync, spawn, execFile} from 'child_process';
 import {resolve} from 'path';
@@ -12,15 +12,19 @@ export class TfsCommand {
     private _tfPath = '"C:/Program Files (x86)/Microsoft Visual Studio 12.0/Common7/IDE/TF.exe"';
 
     private _outputWindow: OutputChannel;
-    
+
+    private _statusBarItem: StatusBarItem;
+
     private _fileReverted = false;
 
     constructor() {
-        
+
         this._outputWindow = window.createOutputChannel("TFS");
 
         let subscriptions: Disposable[] = [];
         workspace.onDidChangeTextDocument(this._onTextChange, this, subscriptions);
+
+        window.onDidChangeActiveTextEditor(this._setStatus, this, subscriptions);
 
         this._disposable = Disposable.from(...subscriptions);
     }
@@ -35,7 +39,7 @@ export class TfsCommand {
             window.showInformationMessage("Latest files retrieved.");
             this._appendOutput("Finished getting all files from TFS");
         });
-        
+
         this._appendOutput("Getting all files from TFS");
     }
 
@@ -46,12 +50,13 @@ export class TfsCommand {
 
     checkOut(filePath: string) {
         this.isFileCheckedOut(filePath).then(checkedOut => {
-             if (!checkedOut) {
+            if (!checkedOut) {
                 this._appendOutput("Checking out file: " + filePath);
-                
+
                 let cmd = `${this._tfPath} checkout "${filePath}"`;
                 exec(cmd, (error, stdOut, stdErr) => {
                     window.showInformationMessage("File checked out.");
+                    this._setStatus(true);
                     this._appendOutput("Checked out file: " + filePath);
                 });
             }
@@ -67,6 +72,7 @@ export class TfsCommand {
                     window.showInformationMessage("File reverted.");
                     this._appendOutput("File reverted: " + filePath);
                     this._fileReverted = true;
+                    this._setStatus(false);
                 });
             } else {
                 window.showInformationMessage("This file has no pending changes.");
@@ -74,7 +80,7 @@ export class TfsCommand {
         });
     }
 
-    isFileCheckedOut(filePath: string): Promise<Boolean> {
+    isFileCheckedOut(filePath: string): Promise<boolean> {
         let cmd = `${this._tfPath} status "${filePath}"`;
 
         let promise = new Promise((resolve, reject) => {
@@ -97,23 +103,57 @@ export class TfsCommand {
         return promise;
     }
 
+    private _setStatus(event, out?: boolean) {
+
+        function setStatusMessage(statusBarItem: StatusBarItem, checkedOut: boolean) {
+            if (checkedOut) {
+                statusBarItem.text = `$(check) File is checked out`
+            } else {
+                statusBarItem.text = `$(circle-slash) File is locked`
+            }
+            statusBarItem.show();
+        }
+
+        if (!this._statusBarItem) {
+            this._statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
+        }
+
+        let editor = window.activeTextEditor;
+        if (!editor) {
+            this._statusBarItem.hide();
+            return;
+        }
+        if (typeof out !== 'undefined') {
+            setStatusMessage(this._statusBarItem, out);
+        } else {
+            if (utils.getCurrentFilePath()) {
+
+                this.isFileCheckedOut(utils.getCurrentFilePath()).then(checkedOut => {
+                      setStatusMessage(this._statusBarItem, checkedOut);
+                })
+            } else {
+                this._statusBarItem.hide();
+            }
+        }
+    }
+
     private _onTextChange() {
         if (window.activeTextEditor.document.isDirty) {
             return;
         }
 
         if (!_.isEmpty(utils.getCurrentFilePath())) {
-            
+
             if (!this._fileReverted) {
                 this.checkOut(utils.getCurrentFilePath());
             }
-            
+
             this._fileReverted = false;
         }
     }
-    
+
     private _appendOutput(value: string) {
-        this._outputWindow.appendLine(new Date().toLocaleString() + " " +value);
+        //this._outputWindow.appendLine(new Date().toLocaleString() + " " +value);
     }
 
 }
