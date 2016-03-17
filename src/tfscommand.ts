@@ -2,6 +2,7 @@ import {workspace, window, Disposable, OutputChannel, StatusBarItem, StatusBarAl
 import * as utils from './utils';
 import {exec, spawnSync, spawn, execFile} from 'child_process';
 import {resolve} from 'path';
+import * as _ from 'lodash';
 
 export class TfsCommand {
 
