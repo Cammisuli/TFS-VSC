@@ -138,9 +138,9 @@ export class TfsCommand {
     }
 
     private _onTextChange() {
-        if (window.activeTextEditor.document.isDirty) {
-            return;
-        }
+        // if (window.activeTextEditor.document.isDirty) {
+        //     return;
+        // }
 
         if (!_.isEmpty(utils.getCurrentFilePath())) {
 
